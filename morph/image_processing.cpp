@@ -3,8 +3,14 @@
 #include <stdlib.h>
 #include <cstdlib>
 
-#include "image_processing.h"
 #include "image.h"
+
+
+using namespace std;
+
+int readImageHeader(char[], int&, int&, int&, bool&);
+int readImage(char[], Image&);
+int writeImage(char[], Image&);
 
 int **resimOku(char *resimadi){
 	
@@ -59,13 +65,13 @@ int readImage(char fname[], Image& image)
     int N, M, Q;
     unsigned char *charImage;
     char header [100], *ptr;
-    std::ifstream ifp;
+    ifstream ifp;
 
-    ifp.open(fname, std::ios::in | std::ios::binary);
+    ifp.open(fname, ios::in | ios::binary);
 
     if (!ifp) 
     {
-        std::cout << "Can't read image: " << fname << std::endl;
+        cout << "Can't read image: " << fname << endl;
         exit(1);
     }
 
@@ -74,7 +80,7 @@ int readImage(char fname[], Image& image)
     ifp.getline(header,100,'\n');
     if ( (header[0]!=80) || (header[1]!=53) ) 
     {   
-        std::cout << "Image " << fname << " is not PGM" << std::endl;
+        cout << "Image " << fname << " is not PGM" << endl;
         exit(1);
     }
 
@@ -94,7 +100,7 @@ int readImage(char fname[], Image& image)
 
     if (ifp.fail()) 
     {
-        std::cout << "Image " << fname << " has wrong size" << std::endl;
+        cout << "Image " << fname << " has wrong size" << endl;
         exit(1);
     }
 
@@ -123,11 +129,11 @@ int readImage(char fname[], Image& image)
 int readImageHeader(char fname[], int& N, int& M, int& Q, bool& type)
 {
     char header [100], *ptr;
-    std::ifstream ifp;
-    ifp.open(fname, std::ios::in | std::ios::binary);
+    ifstream ifp;
+    ifp.open(fname, ios::in | ios::binary);
 
     if (!ifp){
-        std::cout << "Boyle bir resim bulunamadi: " << fname << std::endl;
+        cout << "Boyle bir resim bulunamadi: " << fname << endl;
         return(2);
     }
 
@@ -146,7 +152,7 @@ int readImageHeader(char fname[], int& N, int& M, int& Q, bool& type)
     } 
     else 
     {
-        std::cout << "Resim PGM formatinda olmali:  " << fname << std::endl;
+        cout << "Resim PGM formatinda olmali:  " << fname << endl;
         return(3);
     }
 
@@ -171,7 +177,7 @@ int writeImage(char fname[], Image& image)
     int i, j;
     int N, M, Q;
     unsigned char *charImage;
-    std::ofstream ofp;
+    ofstream ofp;
 
     image.getImageInfo(N, M, Q);
 
@@ -190,23 +196,23 @@ int writeImage(char fname[], Image& image)
         }
     }
 
-    ofp.open(fname, std::ios::out | std::ios::binary);
+    ofp.open(fname, ios::out | ios::binary);
 
     if (!ofp) 
     {
-        std::cout << "Can't open file: " << fname << std::endl;
+        cout << "Can't open file: " << fname << endl;
         exit(1);
     }
 
-    ofp << "P5" << std::endl;
-    ofp << M << " " << N << std::endl;
-    ofp << Q << std::endl;
+    ofp << "P5" << endl;
+    ofp << M << " " << N << endl;
+    ofp << Q << endl;
 
     ofp.write( reinterpret_cast<char *>(charImage), (M*N)*sizeof(unsigned char));
 
     if (ofp.fail()) 
     {
-        std::cout << "Can't write image " << fname << std::endl;
+        cout << "Can't write image " << fname << endl;
         exit(0);
     }
 

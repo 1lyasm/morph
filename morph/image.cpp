@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <iostream>
 #include <cmath>
-
 #include "image.h"
+using namespace std;
 
 Image::Image()
 {
