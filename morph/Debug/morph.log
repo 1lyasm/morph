@@ -1,2 +1,5 @@
-﻿  main.cpp
+﻿  image.cpp
+  image_processing.cpp
+  main.cpp
+  Generating Code...
   morph.vcxproj -> C:\Users\ilyas\source\repos\morph\Debug\morph.exe

@@ -62,16 +62,181 @@ int main(void) {
 }
 
 void Dilation(int n, int filter_size, short* resim_org) {
-	/*for (int i = 0; i < 512; i++)
-		for (int j = 0; j < 512; j++)
-			resim_org[i][j] = 255;*/
 	__asm {
-		//KODUNUZU BURAYA YAZINIZ, ASAGIDAKI 5 ORNEK ERISIM ICIN VERILMISTIR SIZ YAZMAYA BASLAMADAN SILINIZ
-		MOV esi, resim_org
-		MOV ECX, n
-		L1:	MOV BYTE PTR[esi], 0	;her bir piksel 1 word boyutunda(short oldugu icin)
-		ADD esi, 2
-		LOOP L1
+		; exactly same as erosion, except that maximum (bl) is set to 0 first, 
+		; and comparison is done to check if the value is more than maximum
+
+		mov eax, n
+		xor edx, edx
+		xor edi, edi
+		mov dx, 1
+		L1 : sub eax, edx
+		inc edi
+		cmp eax, 0
+		jle L2
+		add dx, 2
+		jmp L1
+		L2 :
+			mov esi, resim_org
+			L11 :
+			mov eax, esi
+			sub eax, resim_org
+			shr eax, 1
+			xor edx, edx
+			div edi
+			ror edx, 16
+			mov dx, ax
+			rol edx, 16
+
+			; set initial value of max
+			xor bl, bl
+
+			mov eax, filter_size
+			shr eax, 1
+			neg eax
+			mov cl, al
+			L7 :
+		mov eax, edx
+			shr eax, 16
+			mov bh, ch
+			and ecx, 00ffh
+			xchg eax, ecx
+			cbw
+			cwde
+			add ecx, eax
+			xchg eax, ecx
+			mov ch, bh
+			cmp eax, 0
+			jl L8
+			cmp eax, edi
+			jge L9
+			mov eax, filter_size
+			shr eax, 1
+			neg eax
+			mov ch, al
+			L6 :
+		xor eax, eax
+			mov ax, dx
+			mov bh, cl
+			shr cx, 8
+			and ecx, 00ffh
+			xchg eax, ecx
+			cbw
+			cwde
+			add ecx, eax
+			xchg eax, ecx
+			shl cx, 8
+			mov cl, bh
+			cmp eax, 0
+			jl L10
+			cmp eax, edi
+			jge L8
+			mov eax, edi
+			mov bh, ch
+			ror ebx, 16
+			mov bx, dx
+			and cx, 00ffh
+			xchg ax, cx
+			cbw
+			xchg ax, cx
+			imul cx
+			ror eax, 16
+			mov ax, dx
+			rol eax, 16
+			mov dx, bx
+			rol ebx, 16
+			mov ch, bh
+			shl eax, 1
+			add eax, esi
+			mov bh, cl
+			ror cx, 8
+			and cx, 00ffh
+			xchg eax, ecx
+			cbw
+			cwde
+			add ecx, eax
+			add ecx, eax
+			xchg eax, ecx
+			rol cx, 8
+			mov cl, bh
+			xchg eax, ebx
+			cmp byte ptr[ebx], al
+			xchg eax, ebx
+
+			; this time, pass if below or equal
+			jbe L10
+
+			mov ebx, eax
+			mov bl, byte ptr[ebx]
+			L10 :
+		inc ch
+			mov eax, filter_size
+			shr eax, 1
+			cmp ch, al
+			jle L6
+			L8 :
+		inc cl
+			mov eax, filter_size
+			shr eax, 1
+			cmp cl, al
+			jle L7
+			L9 :
+			cmp esi, resim_org
+			jne L12
+			push 0
+			L12:
+			pop edx
+			mov eax, esi
+			sub eax, resim_org
+			cmp eax, 0
+			jz L13
+			shr eax, 2
+			jc L13
+			shr eax, 1
+			jc L13
+			push edx
+			and ebx, 00ffh
+			push ebx
+			jmp L14
+			L13 :
+			mov eax, esi
+			sub eax, resim_org
+			mov cl, al
+			and cl, 7
+			shl cl, 2
+			ror edx, cl
+			and bx, 00ffh
+			mov dl, bl
+			rol edx, cl
+			push edx
+			L14 :
+			add esi, 2
+			mov eax, esi
+			sub eax, resim_org
+			shr eax, 1
+			cmp eax, n
+			je L5
+			jmp L11
+			L5 :
+			mov eax, n
+			dec eax
+			shl eax, 1
+			add eax, resim_org
+			mov esi, eax
+			L4 :
+			pop eax
+			mov byte ptr[esi - 6], al
+			shr eax, 8
+			mov byte ptr[esi - 4], al
+			shr eax, 8
+			mov byte ptr[esi - 2], al
+			shr eax, 8
+			mov byte ptr[esi], al
+			sub esi, 8
+			cmp esi, resim_org
+			jl L3
+			jmp L4
+			L3 :
 	}
 	printf("\nDilation islemi sonucunda resim \"dilated.pgm\" ismiyle olusturuldu...\n");
 }
@@ -225,7 +390,9 @@ void Erosion(int n, int filter_size, short* resim_org) {
 					shr eax, 1
 					cmp cl, al
 					jle L7
+
 	L9:
+
 	; push minimum value
 		; if first time, push zero
 			cmp esi, resim_org
@@ -233,30 +400,41 @@ void Erosion(int n, int filter_size, short* resim_org) {
 			push 0
 
 	L12:
-		; eax = last pushed
-			pop eax
+		; edx = last pushed
+			pop edx
 
-		; check if empty
-			mov ecx, esi
-			sub ecx, resim_org
-			shr ecx, 2
-			jc L13
-			cmp ecx, 0
+		; check whether a byte is empty
+			mov eax, esi
+			sub eax, resim_org
+			cmp eax, 0
 			jz L13
+			shr eax, 2
+			jc L13
+			shr eax, 1
+			jc L13
 
 		; if no empty place, push back previous, and push new
-			push eax
+			push edx
 			and ebx, 00ffh
 			push ebx
 			jmp L14
 
 	L13:
-		; if there is empty place, fill and push back
-			ror eax, 16
+		; find which byte to fill
+			mov eax, esi
+			sub eax, resim_org
+			
+		; find remainder when divided by 8
+			mov cl, al
+			and cl, 7
+			shl cl, 2
+
+		; fill and push back
+			ror edx, cl
 			and bx, 00ffh
-			mov ax, bx
-			rol eax, 16
-			push eax
+			mov dl, bl
+			rol edx, cl
+			push edx
 	  
 	L14:
 	; go to next element
@@ -285,13 +463,16 @@ void Erosion(int n, int filter_size, short* resim_org) {
 		pop eax
 	
 	; write popped value as value of current element
-		mov byte ptr [esi - 2], al
-		ror eax, 16
+		mov byte ptr [esi - 6], al
+		shr eax, 8
+		mov byte ptr[esi - 4], al
+		shr eax, 8
+		mov byte ptr[esi - 2], al
+		shr eax, 8
 		mov byte ptr[esi], al
-		rol eax, 16
 
-	; got two minimums, go back two elements
-		sub esi, 4
+	; got four minimums, go back four elements
+		sub esi, 8
 
 	; exit loop if first pixel is written
 		cmp esi, resim_org
@@ -301,9 +482,6 @@ void Erosion(int n, int filter_size, short* resim_org) {
 		jmp L4
 
 	L3:
-		mov eax, n
-		shl eax, 1
 	}
 	printf("\nErosion islemi sonucunda resim \"eroded.pgm\" ismiyle olusturuldu...\n");
 }
-

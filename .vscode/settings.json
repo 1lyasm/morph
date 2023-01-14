@@ -2,6 +2,8 @@
     "files.associations": {
         "atomic": "cpp",
         "xlocale": "cpp",
-        "xstring": "cpp"
+        "xstring": "cpp",
+        "ostream": "cpp",
+        "xlocnum": "cpp"
     }
 }
