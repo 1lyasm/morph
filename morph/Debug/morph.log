@@ -1,4 +1,2 @@
 ﻿  main.cpp
-C:\Users\ilyas\source\repos\morph\morph\main.cpp(199): warning C4731: 'Erosion': frame pointer register 'ebp' modified by inline assembly code
-C:\Users\ilyas\source\repos\morph\morph\main.cpp(216): warning C4731: 'Erosion': frame pointer register 'ebp' modified by inline assembly code
   morph.vcxproj -> C:\Users\ilyas\source\repos\morph\Debug\morph.exe

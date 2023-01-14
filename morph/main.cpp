@@ -67,194 +67,242 @@ void Dilation(int n, int filter_size, short* resim_org) {
 			resim_org[i][j] = 255;*/
 	__asm {
 		//KODUNUZU BURAYA YAZINIZ, ASAGIDAKI 5 ORNEK ERISIM ICIN VERILMISTIR SIZ YAZMAYA BASLAMADAN SILINIZ
-		MOV EBX, resim_org
+		MOV esi, resim_org
 		MOV ECX, n
-		L1:	MOV BYTE PTR[EBX], 0	;her bir piksel 1 word boyutunda(short oldugu icin)
-		ADD EBX, 2
+		L1:	MOV BYTE PTR[esi], 0	;her bir piksel 1 word boyutunda(short oldugu icin)
+		ADD esi, 2
 		LOOP L1
 	}
 	printf("\nDilation islemi sonucunda resim \"dilated.pgm\" ismiyle olusturuldu...\n");
 }
 
 void Erosion(int n, int filter_size, short* resim_org) {
-	/*
-    * eax, ebx, ecx, edx, esi, edi
-	* filter_size 16b
-	* n 32 b
-	* resim_org 32b
-	* min: 8b
-	* x, y, x', y', sqrt(n) 16b
-	* h ebx: x, l ebx: y, h edx: x', l edx: y'
-	* edi: sqrt(n), esi: min
-	* eax, ecx: free
-	* all else stack
-    */
 	__asm {
-		int 3
-		push 0
-		; find length in one dimension
+	; find length in one dimension
+	; edi: sqrt(n)
 		mov eax, n
 		xor edx, edx
 		xor edi, edi
 		mov dx, 1
-		L1:	sub eax, edx
+	L1:	sub eax, edx
 		inc edi
 		cmp eax, 0
 		jle L2
 		add dx, 2
 		jmp L1
+
 	L2:
-		; step 1
-		mov eax, edi
-		dec eax
-		mov bx, ax
-		shl ebx, 16
-		mov bx, ax
-	L8:	; step 2.1
-		mov esi, 00ffh
-		; step 2.2, 2.3
-	    mov eax, filter_size
-		shr eax, 1
-		neg ax
-	    mov dx, ax
-		shl edx, 16
-	L6:
-	mov eax, filter_size
-		shr eax, 1
-		neg ax
-		mov dx, ax
-		L5 : ; step 2.4, 2.5
-		mov ecx, edx
-		shr ecx, 16
-		mov ax, cx
-		mov ecx, ebx
-		shr ecx, 16
-		add ax, cx
-		cmp ax, 0
-		jl L3
-		mov eax, edi
-		sub ax, cx
-		mov ecx, edx
-		shr ecx, 16
-		cmp cx, ax
-		jge L3
-		; step 2.6, 2.7
-		mov ax, bx
-		add ax, dx
-		cmp ax, 0
-		jl L3
-		mov eax, edi
-		sub ax, bx
-		cmp dx, ax
-		jge L3
-		; step 2.8
-		xor eax, eax
-		mov ax, bx
-		add ax, dx
-		mov ecx, edx
-		xor edx, edx
-		mul edi
-		mov edx, ecx
-		mov ecx, ebx
-		shr ecx, 16
-		add eax, ecx
-		mov ecx, edx
-		sar ecx, 16
-		add eax, ecx
-		shl eax, 1
-		add eax, resim_org
-		mov ecx, edx
-		mov edx, eax
+	; set index, esi: pixel index
+		mov esi, resim_org
+	
+	L11:
+	; put minimum value to bl
+
+	; extract row and column indexes
 		mov eax, esi
-		cmp byte ptr[edx], al
-		jae L4
-		; step 2.9
-		mov al, byte ptr[edx]
-		and eax, 000000ffh
-		mov esi, eax
-		L4 : mov edx, ecx
-		L3 : ; step 2.10
-		inc dx
-		; step 2.11, 2.12
+		sub eax, resim_org
+		shr eax, 1
+		xor edx, edx
+		div edi
+
+	; edx high: row index, edx low: column index
+		ror edx, 16
+		mov dx, ax
+		rol edx, 16
+
+	; make bl temporary minimum
+		mov bl, 0ffh
+
+	; find -filter_size / 2
 		mov eax, filter_size
 		shr eax, 1
-		mov ecx, filter_size
-		inc ecx
-		shr ecx, 1
-		sbb eax, 0
-		cmp ax, dx
-		jge L5
-		; 2.13
-		rol edx, 16
-		inc edx
-		rol edx, 16
-		; 2.14
-		mov ecx, edx
-		shr ecx, 16
-		cmp ax, cx
-		; 2.15
-		jge L6
+		neg eax
 
-		; step 3
-		sub ebp, 4
-		mov ecx, dword ptr[ebp]
-		cmp cl, 32
-		je L11
-		pop eax
-		ror eax, cl
-		mov ecx, esi
-		mov al, cl
-		mov ecx, dword ptr[ebp]
-		rol eax, cl
-		push eax
-		add dword ptr[ebp], 8
-		jmp L12
-	L11:
-		mov dword ptr [ebp], 0
-		push 0
-	L12:
-		add ebp, 4
+	; for cl: ((-filter_size) / 2) to (filter_size / 2) (row)
+		mov cl, al
+	; check if current row + cl is in bounds
+	L7:	
+		mov eax, edx
+		shr eax, 16
+		mov bh, ch
+		and ecx, 00ffh
+		xchg eax, ecx
+		cbw
+		cwde
+		add ecx, eax
+		xchg eax, ecx
+		mov ch, bh
+		cmp eax, 0
+		jl L8
+		cmp eax, edi
+		jge L9
+		; for ch: ((-filter_size) / 2) to (filter_size / 2) (col)
+			mov eax, filter_size
+			shr eax, 1
+			neg eax
+			mov ch, al
+			; check if current col + ch is in bounds
+	L6:			
+				xor eax, eax
+				mov ax, dx
+				mov bh, cl
+				shr cx, 8
+				and ecx, 00ffh
+				xchg eax, ecx
+				cbw
+				cwde
+				add ecx, eax
+				xchg eax, ecx
+				shl cx, 8
+				mov cl, bh
+				cmp eax, 0
+				jl L10
+				cmp eax, edi
+				jge L8
+		    ; if yes, compute the offsetted index
+			; esi + 2 * cl * edi + 2 * ch
+				; eax = 2 * cl * edi
+					mov eax, edi
+					mov bh, ch
+					ror ebx, 16
+					mov bx, dx
+					and cx, 00ffh
+					xchg ax, cx
+					cbw
+					xchg ax, cx
+					imul cx
+					ror eax, 16
+					mov ax, dx
+					rol eax, 16
+					mov dx, bx
+					rol ebx, 16
+					mov ch, bh
+					shl eax, 1
 
-		; step 4
-		test ebx, ebx
-		jz L9
-		mov ecx, ebx
-		shr ecx, 16
-		cmp cx, 0
-		jbe L7
-		rol ebx, 16
-		dec bx
-		rol ebx, 16
-		jmp L8
-	L7:
-		mov eax, edi
-		dec eax
-		rol ebx, 16
-		mov bx, ax
-		rol ebx, 16
-		dec bx
-		jmp L8
+				; eax = eax + esi
+					add eax, esi
+
+				; eax = eax + 2 * ch
+					mov bh, cl
+					ror cx, 8
+					and cx, 00ffh
+					xchg eax, ecx
+					cbw
+					cwde
+					add ecx, eax
+					add ecx, eax
+					xchg eax, ecx
+					rol cx, 8
+					mov cl, bh
+
+			; compare the value in that index to bl
+				; cmp byte ptr [eax], bl
+				xchg eax, ebx
+				cmp byte ptr[ebx], al
+				xchg eax, ebx
+
+			; if not smaller, continue
+				jae L10
+
+			; if smaller, update bl
+				mov ebx, eax
+				mov bl, byte ptr [ebx]
+
+			; increment counters and loop back
+
+				; increment and check inner counter ch
+		L10:			
+					inc ch
+					mov eax, filter_size
+					shr eax, 1
+					cmp ch, al
+					jle L6
+
+				; increment and check outer counter cl
+	L8:				
+					inc cl
+					mov eax, filter_size
+					shr eax, 1
+					cmp cl, al
+					jle L7
 	L9:
-		
-	; pull found minimums
-	; from stack and write to array
-		mov ecx, n
-		shr ecx, 2
-		mov edx, resim_org
-		int 3
-	L10:pop eax
-		mov byte ptr [edx + 6], al
-		shr eax, 8
-		mov byte ptr [edx + 4], al
-		shr eax, 8
-		mov byte ptr[edx + 2], al
-		shr eax, 8
-		mov byte ptr[edx], al
-		add edx, 8
-		loop L10
+	; push minimum value
+		; if first time, push zero
+			cmp esi, resim_org
+			jne L12
+			push 0
 
-		mov esp, ebp
-		sub esp, 12
+	L12:
+		; eax = last pushed
+			pop eax
+
+		; check if empty
+			mov ecx, esi
+			sub ecx, resim_org
+			shr ecx, 2
+			jc L13
+			cmp ecx, 0
+			jz L13
+
+		; if no empty place, push back previous, and push new
+			push eax
+			and ebx, 00ffh
+			push ebx
+			jmp L14
+
+	L13:
+		; if there is empty place, fill and push back
+			ror eax, 16
+			and bx, 00ffh
+			mov ax, bx
+			rol eax, 16
+			push eax
+	  
+	L14:
+	; go to next element
+	    add esi, 2
+
+	; exit if end of array
+		mov eax, esi
+		sub eax, resim_org
+		shr eax, 1
+		cmp eax, n
+		je L5
+
+	; go to next element
+		jmp L11
+
+	L5: 
+	; start from last element of picture
+		mov eax, n
+		dec eax
+		shl eax, 1
+		add eax, resim_org
+		mov esi, eax
+
+	L4:
+	; pop from stack
+		pop eax
+	
+	; write popped value as value of current element
+		mov byte ptr [esi - 2], al
+		ror eax, 16
+		mov byte ptr[esi], al
+		rol eax, 16
+
+	; got two minimums, go back two elements
+		sub esi, 4
+
+	; exit loop if first pixel is written
+		cmp esi, resim_org
+		jl L3
+
+	; continue with one element before
+		jmp L4
+
+	L3:
+		mov eax, n
+		shl eax, 1
 	}
 	printf("\nErosion islemi sonucunda resim \"eroded.pgm\" ismiyle olusturuldu...\n");
 }
