@@ -3,7 +3,6 @@ Erosion and dilation operations using inline assembly <br />
 Homework of low level programming course <br />
 All code that is not inline assembly is written by course instructors <br />
 
-<br /> 
 Original image 
 ![lena_1](https://user-images.githubusercontent.com/84722851/212545992-4555a63e-2b57-4546-87a5-c5250edc5b8c.png)
 
