@@ -9,6 +9,7 @@ Original image
 <br /> <br /> <br /> <br />
 
 Dilated with 3x3 square structuring element
+<br /> <br /> <br /> <br />
 ![dilated_1](https://user-images.githubusercontent.com/84722851/212545707-40ff5a63-b8e8-4c28-9d23-07949c1dd342.png)
 
 Eroded with 7x7 square structuring element
