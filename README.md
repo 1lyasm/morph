@@ -5,7 +5,7 @@ All code that is not inline assembly is written by course instructors <br />
 
 <br />
 Original image <br /> 
-![lena_1 (1)](https://user-images.githubusercontent.com/84722851/212545702-576c2335-4491-47c9-a057-f0814cad9131.png)
+![lena_1 (1)](https://user-images.githubusercontent.com/84722851/212545917-055106c1-a4fa-40f5-811c-aa04eecce7bc.png)
 
  <br /> <br /> <br />
 Dilated with 3x3 square structuring element <br /> <br />
