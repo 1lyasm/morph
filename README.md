@@ -4,8 +4,8 @@ Homework of low level programming course <br />
 All code that is not inline assembly is written by course instructors <br />
 
 <br />
-Original image <br /> 
-![lena_1 (1)](https://user-images.githubusercontent.com/84722851/212545917-055106c1-a4fa-40f5-811c-aa04eecce7bc.png)
+Original image <br /> <br />
+![lena_1 (1)](https://user-images.githubusercontent.com/84722851/212545931-827fe2ea-0fcf-45fb-8391-f12fba85a2a1.png)
 
  <br /> <br /> <br />
 Dilated with 3x3 square structuring element <br /> <br />
